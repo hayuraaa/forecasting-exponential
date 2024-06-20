@@ -57,7 +57,7 @@
 							<span class="menu-collapse">Triple Exponential</span>
 						</div>
 					</a>
-					<a href="prediksi_linier.php" class="bg-dark list-group-item list-group-item-action flex-column align-items-start">
+					<a href="prediksiregresi.php" class="bg-dark list-group-item list-group-item-action flex-column align-items-start">
 						<div class="d-flex w-100 justify-content-start align-items-center">
 							<span class="menu-collapse">Linear Regression</span>
 						</div>
@@ -84,32 +84,32 @@
 
 		<div class="col-md-10 p-4" style="background-color: #e3e6e8">
 			<div class="card border-0">
-				<h3 class="card-header bg-transparent">Data Penjualan Properti</h3>
+				<h3 class="card-header bg-transparent">Data Stock Darah</h3>
 				<div class="card-body">
 					<form method="post">
 						<div class="form-row mb-4">
 							<div class="col-md-8 mr-4">
 								<label class="mr-sm-2" for="pilih">Pilih Golongan Darah</label>
-								<select class="custom-select mr-sm-2" id="pilih" name="kota">
+								<select class="custom-select mr-sm-2" id="pilih" name="golongan">
 
 									<?php
 
 
 									include("koneksi.php");
-									$sql = "SELECT * from tb_provinsi";
+									$sql = "SELECT * from tb_goldarah";
 									$hasil = mysqli_query($koneksi, $sql) or exit("error query: <b>" . $sql . "</b>.");
 									while ($data = mysqli_fetch_array($hasil)) {
 										$ket = "";
-										if (isset($_POST['kota'])) {
-											$kota = trim($_POST['kota']);
+										if (isset($_POST['golongan'])) {
+											$golongan = trim($_POST['golongan']);
 
-											if ($kota == $data['id_kategori']) {
+											if ($golongan == $data['id_kategori']) {
 												$ket = "selected";
 											}
 										}
 									?>
 
-										<option <?php echo $ket; ?> value="<?php echo $data['id_kategori']; ?>"><?php echo $data['kota']; ?></option>
+										<option <?php echo $ket; ?> value="<?php echo $data['id_kategori']; ?>"><?php echo $data['golongan']; ?></option>
 									<?php } ?>
 								</select>
 							</div>
@@ -139,8 +139,8 @@
 						use Phpml\Preprocessing\Imputer\Strategy\MeanStrategy;
 
 						$nourut = 1;
-						if (isset($_POST['kota'])) {
-							$provinsi = trim($_POST['kota']);
+						if (isset($_POST['golongan'])) {
+							$provinsi = trim($_POST['golongan']);
 							$sql = "SELECT * from tb_data where id_kategori=$provinsi";
 						} else {
 							$sql = "SELECT * from tb_data where id_kategori=1";

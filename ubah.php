@@ -12,7 +12,7 @@
 <body>
 	<nav class="navbar navbar-expand-md navbar-dark fixed-top" style="background-color: #42a5f5">
 		<a class="navbar-brand" href="index.php">
-			<span class="menu-collapse">Prediksi Penjualan Properti</span>
+			<span class="menu-collapse">Prediksi Stok Darah</span>
 		</a>
 
 	</nav>

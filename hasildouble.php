@@ -2,212 +2,285 @@
 <html>
 
 <head>
-    <title>Hasil Prediksi</title>
-    <link rel="stylesheet" type="text/css" href="css/bootstrap.min.css">
-    <script src="jquery.min.js"></script>
-    <script src="js/bootstrap.bundle.min.js"></script>
-    <link rel="stylesheet" type="text/css" href="css/style.css">
-    <link rel="stylesheet" href="fontawesome/css/all.css" />
-    <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
+    <title></title>
 </head>
+<link rel="stylesheet" type="text/css" href="css/bootstrap.min.css">
+<script src="jquery.min.js"></script>
+<script src="js/bootstrap.bundle.min.js"></script>
+<link rel="stylesheet" type="text/css" href="css/style.css">
+<link rel="stylesheet" href="fontawesome/css/all.css" />
+<meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
 
 <body>
     <nav class="navbar navbar-expand-md navbar-dark fixed-top" style="background-color: #42a5f5">
         <a class="navbar-brand" href="index.php">
-            <span class="menu-collapse"> Prediksi Stok Darah</span>
+            <span class="menu-collapse">Prediksi Stock Darah</span>
         </a>
     </nav>
 
     <div class="row" id="body-row">
         <div id="sidebar-container" class="sidebar-expanded d-none d-md-block col-2">
             <ul class="list-group sticky-top sticky-offset">
-                <a href="index.php" class="bg-dark list-group-item list-group-item-action flex-column align-items-start">
+                <a href="index.php" data-toggle="collapse" aria-expanded="false" class="bg-dark list-group-item list-group-item-action flex-column align-items-start">
                     <div class="d-flex w-100 justify-content-start align-items-center">
                         <i class="fas fa-home fa-fw mr-3"></i>
                         <span class="menu-collapse">Beranda</span>
                     </div>
                 </a>
-                <a href="data.php" class="bg-dark list-group-item list-group-item-action flex-column align-items-start">
+                <a href="data.php" aria-expanded="false" class="bg-dark list-group-item list-group-item-action flex-column align-items-start">
                     <div class="d-flex w-100 justify-content-start align-items-center">
                         <i class="fas fa-database fa-fw mr-3"></i>
                         <span class="menu-collapse">Data</span>
                     </div>
                 </a>
-                <a href="prediksi.php" class="bg-dark list-group-item list-group-item-action">
+                <a href="#prediksiSubmenu" data-toggle="collapse" aria-expanded="false" class="bg-dark list-group-item list-group-item-action flex-column align-items-start">
                     <div class="d-flex w-100 justify-content-start align-items-center">
                         <i class="fas fa-table fa-fw mr-3"></i>
                         <span class="menu-collapse">Prediksi</span>
+                        <i class="fas fa-caret-down ml-auto"></i>
                     </div>
                 </a>
+                <div id="prediksiSubmenu" class="collapse">
+                    <a href="prediksi_double.php" class="bg-dark list-group-item list-group-item-action flex-column align-items-start">
+                        <div class="d-flex w-100 justify-content-start align-items-center">
+                            <span class="menu-collapse">Double Exponential</span>
+                        </div>
+                    </a>
+                    <a href="prediksi.php" class="bg-dark list-group-item list-group-item-action flex-column align-items-start">
+                        <div class="d-flex w-100 justify-content-start align-items-center">
+                            <span class="menu-collapse">Triple Exponential</span>
+                        </div>
+                    </a>
+                    <a href="prediksi_linier.php" class="bg-dark list-group-item list-group-item-action flex-column align-items-start">
+                        <div class="d-flex w-100 justify-content-start align-items-center">
+                            <span class="menu-collapse">Linear Regression</span>
+                        </div>
+                    </a>
+                </div>
                 <a href="grafik.php" class="bg-dark list-group-item list-group-item-action">
                     <div class="d-flex w-100 justify-content-start align-items-center">
                         <i class="fas fa-chart-line fa-fw mr-3"></i>
                         <span class="menu-collapse">Grafik</span>
                     </div>
                 </a>
+                <a href="logout.php" class="bg-dark list-group-item list-group-item-action">
+                    <div class="d-flex w-100 justify-content-start align-items-center">
+                        <i class="fas fa-sign-out-alt fa-fw mr-3"></i>
+                        <span class="menu-collapse">Logout</span>
+                    </div>
+                </a>
             </ul>
         </div>
 
-        <div class="col mt-5">
-            <h2 class="text-center">Hasil Prediksi Stok Darah Double Exponential</h2>
-            <div class="container mt-3">
-                <div class="card border-0">
+        <?php
+        include("koneksi.php");
+        require_once __DIR__ . '/vendor/autoload.php';
+
+        use Phpml\Preprocessing\Imputer;
+        use Phpml\Preprocessing\Imputer\Strategy\MeanStrategy;
+
+        $nourut = 1;
+        $panjang = 4;
+        $rows = array();
+        $alfa = $_POST['alpha'];
+        $beta = $_POST['beta'];
+        $periode = $_POST['periode'];
+
+        if (isset($_POST['golongan'])) {
+            $golongan = trim($_POST['golongan']);
+            $sql = "SELECT * from tb_data where id_kategori=$golongan";
+        } else {
+            $sql = "SELECT * from tb_data where id_kategori=1";
+        }
+
+        $hasil = mysqli_query($koneksi, $sql) or exit("error query: <b>" . $sql . "</b>.");
+        while ($data = mysqli_fetch_array($hasil)) {
+            $rows[] = $data['unit'];
+            $waktu[] = $data['waktu'];
+        }
+        $saja = [$rows];
+
+        $imputer = new Imputer('', new MeanStrategy(), Imputer::AXIS_ROW);
+        $imputer->fit($saja);
+        $imputer->transform($saja);
+
+        /*-------------------------------------------------------------------inisial_level-------------------------------------------------------------------*/
+        $level = array();
+        $jumlah = 0;
+        for ($i = 0; $i < $panjang; $i++) {
+            $jumlah += $saja[0][$i];
+            $level[] = null;
+        }
+        $level[$panjang - 1] = $jumlah / $panjang;
+
+        /*-------------------------------------------------------------------inisial_trend-------------------------------------------------------------------*/
+        $trend = array();
+        $trend1 = 0;
+        for ($i = 0; $i < $panjang; $i++) {
+            $trend1 += $saja[0][$i];
+            $trend[] = null;
+        }
+        $trend1 /= $panjang;
+
+        $trend2 = 0;
+        for ($i = $panjang; $i < 2 * $panjang; $i++) {
+            $trend2 += $saja[0][$i];
+        }
+        $trend2 /= $panjang;
+
+        $trend[$panjang - 1] = abs($trend2 - $trend1) / $panjang;
+
+        /*-------------------------------------------------------------------model-------------------------------------------------------------------*/
+        $prediksi = $periode + count($rows);
+        for ($i = $panjang; $i < count($rows); $i++) {
+            $x = $saja[0][$i];
+
+            $level_simpan = $level[$i - 1];
+            $l0 = $level_simpan;
+
+            $trend_simpan = $trend[$i - 1];
+            $t0 = $trend_simpan;
+
+            $l = $alfa * $x + (1 - $alfa) * ($l0 + $t0);
+            $t = $beta * ($l - $l0) + (1 - $beta) * $t0;
+            $level[$i] = $l;
+            $trend[$i] = $t;
+        }
+
+        /*-------------------------------------------------------------------forecast-------------------------------------------------------------------*/
+        for ($i = 0; $i < $panjang; $i++) {
+            $fore[] = 0;
+        }
+        for ($i = $panjang; $i < count($rows); $i++) {
+            $fore[$i] = round($level[$i - 1] + $trend[$i - 1]);
+        }
+
+        /*-------------------------------------------------------------------mape-------------------------------------------------------------------*/
+        for ($i = 0; $i < count($rows); $i++) {
+            $jumlah = abs(($saja[0][$i] - $fore[$i]) / $saja[0][$i]) / count($rows);
+            $tampung[] = $jumlah;
+            $mape[] = round($jumlah * 100, 1) . "%";
+        }
+
+        /*-------------------------------------------------------------------mae-------------------------------------------------------------------*/
+        $total_mae = 0;
+        for ($i = 0; $i < count($rows); $i++) {
+            $mae[$i] = abs($saja[0][$i] - $fore[$i]);
+            $total_mae += $mae[$i];
+        }
+
+        /*-------------------------------------------------------------------standar deviasi----------------------------------------------------------------*/
+        $jumape = 0;
+        $jumkua = 0;
+        for ($i = 0; $i < count($rows); $i++) {
+            $kuadrat[$i] = pow($tampung[$i], 2);
+            $jumkua += $tampung[$i];
+            $jumape += $kuadrat[$i];
+        }
+        $std = sqrt((count($rows) * $jumape - pow($jumkua, 2)) / (count($rows) * (count($rows) - 1)));
+
+        /*-------------------------------------------------------------------prediksi-------------------------------------------------------------------*/
+        for ($i = count($rows); $i < $prediksi; $i++) {
+            $m = $i - count($rows) + 1;
+            $fore[$i] = round($level[count($rows) - 1] + $m * $trend[count($rows) - 1]);
+        }
+
+        $average_mape = array_sum($tampung) / count($tampung) * 100;
+        $average_mae = $total_mae / count($mae);
+        ?>
+
+        <!--row isi-->
+        <div class="col-md-10 p-4" style="background-color: #F2F3F4">
+            <div class="card border-0">
+                <h2 class="text-center">Hasil Prediksi Stok Darah Double Exponential</h4>
                     <div class="card-body">
-                        <div class="card border">
-                            <div class="card-body">
+                        <div class="geser">
+                            <table class="table table-hover table-bordered table-sm mt-3">
+                                <thead class="thead-light">
+                                    <tr>
+                                        <th>No</th>
+                                        <th>Date</th>
+                                        <th>Unit</th>
+                                        <th>Level</th>
+                                        <th>Trend</th>
+                                        <th>Forecast</th>
+                                        <th>MAPE</th>
+                                        <th>MAE</th>
+                                    </tr>
+                                </thead>
+
                                 <?php
-                                include "koneksi.php";
-
-                                $nourut = 1; // Inisialisasi variabel $nourut
-
-                                if ($_SERVER["REQUEST_METHOD"] == "POST") {
-                                    $alpha = $_POST['alpha'];
-                                    $beta = $_POST['beta'];
-                                    $provinsi = $_POST['kota'];
-                                    $periode = $_POST['periode'];
-
-                                    function double_exponential_smoothing($data, $alpha, $beta, $n_forecast)
-                                    {
-                                        $n = count($data);
-                                        $result = array();
-                                        $level_values = array();
-                                        $trend_values = array();
-
-                                        if ($n > 1) {
-                                            $level = $data[0];
-                                            $trend = $data[1] - $data[0];
-                                            $level_values[] = $level;
-                                            $trend_values[] = $trend;
-                                            $result[0] = 0; // Set the first prediction value to 0
-
-                                            for ($i = 1; $i < $n; $i++) {
-                                                $last_level = $level;
-                                                $level = $alpha * $data[$i] + (1 - $alpha) * ($level + $trend);
-                                                $trend = $beta * ($level - $last_level) + (1 - $beta) * $trend;
-                                                $result[$i] = $level + $trend;
-                                                $level_values[] = $level;
-                                                $trend_values[] = $trend;
-                                            }
-
-                                            for ($i = 0; $i < $n_forecast; $i++) {
-                                                $result[] = $level + ($i + 1) * $trend;
-                                                $level_values[] = $level; // Add level for forecast period
-                                                $trend_values[] = $trend; // Add trend for forecast period
-                                            }
-                                        }
-
-                                        return array($result, $level_values, $trend_values);
-                                    }
-
-
-                                    // Mengambil data dari database
-                                    $sql = "SELECT * FROM tb_data WHERE id_kategori = '$provinsi'";
-                                    $result = mysqli_query($koneksi, $sql);
-                                    $rows = array();
-                                    $waktu = array();
-                                    while ($row = mysqli_fetch_assoc($result)) {
-                                        $rows[] = $row['unit'];
-                                        $waktu[] = $row['waktu'];
-                                    }
-
-                                    // Memastikan ada data sebelum melakukan prediksi
-                                    if (count($rows) > 1) {
-                                        // Prediksi menggunakan Double Exponential Smoothing
-                                        list($forecast, $level_values, $trend_values) = double_exponential_smoothing($rows, $alpha, $beta, $periode);
-
-                                        // Menghitung MAPE
-                                        $mape = array();
-                                        for ($i = 0; $i < count($rows); $i++) {
-                                            if (isset($forecast[$i]) && $rows[$i] != 0) {
-                                                $mape[$i] = abs(($rows[$i] - $forecast[$i]) / $rows[$i]) * 100;
-                                            } else {
-                                                $mape[$i] = 0;
-                                            }
-                                        }
-
-                                        // Menampilkan hasil prediksi dalam tabel
-                                        echo "<table class='table table-hover table-bordered table-sm mt-3'>";
-                                        echo "<thead class='thead-light'>";
-                                        echo "<tr>";
-                                        echo "<th>No</th>";
-                                        echo "<th>Date</th>";
-                                        echo "<th>Unit</th>";
-                                        echo "<th>Level</th>";
-                                        echo "<th>Trend</th>";
-                                        echo "<th>Forecast</th>";
-                                        echo "<th>MAPE (%)</th>";
-                                        echo "</tr>";
-                                        echo "</thead>";
-                                        echo "<tbody>";
-
-                                        for ($i = 0; $i < count($rows); $i++) {
-                                            echo "<tr>";
-                                            echo "<td>" . ($nourut++) . "</td>";
-                                            echo "<td>" . $waktu[$i] . "</td>";
-                                            echo "<td>" . $rows[$i] . "</td>";
-                                            echo "<td>" . (isset($level_values[$i]) ? round($level_values[$i], 2) : '') . "</td>";
-                                            echo "<td>" . (isset($trend_values[$i]) ? round($trend_values[$i], 2) : '') . "</td>";
-                                            echo "<td>" . (isset($forecast[$i]) ? round($forecast[$i], 2) : '') . "</td>";
-                                            echo "<td>" . (isset($mape[$i]) ? round($mape[$i], 2) . '%' : '') . "</td>";
-                                            echo "</tr>";
-                                        }
-
-                                        echo "</tbody>";
-                                        echo "</table>";
-
-                                        // Menampilkan forecasting periode ke depan
-                                        echo "<br><h2 class='text-center'>Forecasting Priode Kedepan</h2>";
-                                        echo "<div class='geser'>";
-                                        echo "<table class='table table-hover table-bordered table-sm mt-3'>";
-                                        echo "<thead class='thead-light'>";
-                                        echo "<tr>";
-                                        echo "<th>No</th>";
-                                        echo "<th>Level</th>";
-                                        echo "<th>Trend</th>";
-                                        echo "<th>Forecast</th>";
-                                        echo "</tr>";
-                                        echo "</thead>";
-                                        echo "<tbody>";
-
-                                        for ($i = count($rows); $i < count($rows) + $periode; $i++) {
-                                            echo "<tr>";
-                                            echo "<td>" . ($i - count($rows) + 1) . "</td>";
-                                            echo "<td>" . (isset($level_values[$i]) ? round($level_values[$i], 2) : '') . "</td>"; // Tampilkan level untuk periode prediksi
-                                            echo "<td>" . (isset($trend_values[$i]) ? round($trend_values[$i], 2) : '') . "</td>"; // Tampilkan trend untuk periode prediksi
-                                            echo "<td>" . (isset($forecast[$i]) ? round($forecast[$i], 2) : '') . "</td>";
-                                            echo "</tr>";
-                                        }
-
-                                        echo "</tbody>";
-                                        echo "</table>";
-                                        echo "</div>";
-
-                                        // Menyimpan hasil ke database
-                                        $sql = "INSERT INTO tb_grafik (waktu, aktual, prediksi, mape) VALUES ('" . json_encode($waktu) . "', '" . json_encode($rows) . "', '" . json_encode(array_slice($forecast, 0, count($rows))) . "', '" . json_encode($mape) . "')";
-                                        mysqli_query($koneksi, $sql) or exit("Error query: <b>" . $sql . "</b>.");
-                                    } else {
-                                        echo "<tr><td colspan='7' class='text-center'>Tidak ada data yang cukup untuk melakukan prediksi.</td></tr>";
-                                    }
-                                }
+                                for ($i = 0; $i < count($rows); $i++) {
                                 ?>
+                                    <tr>
+                                        <td><?php echo $nourut++; ?></td>
+                                        <td><?php echo $waktu[$i]; ?></td>
+                                        <td><?php echo $saja[0][$i]; ?></td>
+                                        <td><?php echo round($level[$i], 2); ?></td>
+                                        <td><?php echo round($trend[$i], 2); ?></td>
+                                        <td><?php echo $fore[$i]; ?></td>
+                                        <td><?php echo $mape[$i]; ?></td>
+                                        <td><?php echo round($mae[$i], 2); ?></td>
+                                    </tr>
+                                <?php } ?>
+                            </table>
+                        </div>
+                        <div class="card border mt-3">
+                            <div class="card-body">
+                                <p><b>Rata-rata MAPE: </b><span><?php echo round($average_mape, 2) . "%"; ?></span></p>
+                                <p><b>Rata-rata MAE: </b><span><?php echo round($average_mae, 2); ?></span></p>
                             </div>
                         </div>
-                    </div>
+                        <table class="table table-hover table-bordered table-sm mt-3">
+                            <thead class="thead-light">
+                                <tr>
+                                    <th>No</th>
+                                    <th>Forecast</th>
+                                </tr>
+                            </thead>
 
-                    <div class="card border">
-                        <div class="card-body">
-                            <?php echo "<b>Hasil Prediksi Double Exponential Smoothing dari stok darah untuk <span style='color:red'>" . $periode . "</span> bulan kedepan adalah <span style='color:red'>" . round($forecast[$i - 1],2) . "</span></b>" ?>
+                            <?php
+                            for ($i = count($rows); $i < $prediksi; $i++) { ?>
+                                <tr>
+                                    <td><?php echo $nourut++ ?></td>
+                                    <td><?php echo $fore[$i] ?></td>
+                                </tr>
+                            <?php } ?>
+                        </table>
+
+                        <div class="card border">
+                            <div class="card-body">
+                                <?php echo "<b>Hasil Prediksi Double Exponential Smoothing dari stok darah untuk <span style='color:red'>" . $periode . "</span> bulan kedepan adalah <span style='color:red'>" . $fore[$prediksi - 1] . "</span></b>" ?>
+                            </div>
+                            <div class="card-footer">
+                                <a href="simpan.php" class="btn btn-primary btn-sm" role="button"><i class="fas fa-plus"></i>simpan</a>
+                            </div>
                         </div>
-                        <div class="card-footer">
-                            <a href="simpan.php" class="btn btn-primary btn-sm" role="button"><i class="fas fa-plus"></i>simpan</a>
-                        </div>
+
+                        <?php
+                        $sql = "INSERT INTO tb_grafik (waktu, aktual, prediksi, mape, level, trend, mae, avg_mae, avg_mape,future_forecast)";
+                        $sql .= " VALUES (
+                                    '" . json_encode($waktu) . "',
+                                    '" . json_encode($saja[0]) . "',
+                                    '" . json_encode($fore) . "',
+                                    '" . json_encode($mape) . "',
+                                    '" . json_encode(array_map(function ($value) {
+                            return round($value, 2);
+                        }, $level)) . "',
+                                    '" . json_encode(array_map(function ($value) {
+                            return round($value, 2);
+                        }, $trend)) . "',
+                                    '" . json_encode(array_map(function ($value) {
+                            return round($value, 2);
+                        }, $mae)) . "',
+                                    '" . round($average_mae, 2) . "',
+                                    '" . round($average_mape, 2) . "', '" . json_encode(array_slice($fore, count($rows))) . "'
+                                )";
+                        $simpandata = mysqli_query($koneksi, $sql) or exit("error query : <b>" . $sql . "</b>.");
+                        ?>
                     </div>
-
-
-                </div>
             </div>
         </div>
-    </div>
 </body>
 
 </html>

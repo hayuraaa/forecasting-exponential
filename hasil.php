@@ -14,7 +14,7 @@
 <body>
 	<nav class="navbar navbar-expand-md navbar-dark fixed-top" style="background-color: #42a5f5">
 		<a class="navbar-brand" href="index.php">
-			<span class="menu-collapse">Prediksi Penjualan Properti</span>
+			<span class="menu-collapse">Prediksi Stock Darah</span>
 		</a>
 
 	</nav>
@@ -81,7 +81,6 @@
 
 		</div>
 
-
 		<?php
 		include("koneksi.php");
 		require_once __DIR__ . '/vendor/autoload.php';
@@ -102,10 +101,9 @@
 		$gama = $_POST['txtgama'];
 		$periode = $_POST['txtperiode'];
 
-
-		if (isset($_POST['kota'])) {
-			$kota = trim($_POST['kota']);
-			$sql = "SELECT * from tb_data where id_kategori=$kota";
+		if (isset($_POST['golongan'])) {
+			$golongan = trim($_POST['golongan']);
+			$sql = "SELECT * from tb_data where id_kategori=$golongan";
 		} else {
 			$sql = "SELECT * from tb_data where id_kategori=1";
 		}
@@ -202,6 +200,13 @@
 			$mape[] = round($jumlah * 100, 1) . "%";
 		}
 
+		/*-------------------------------------------------------------------mae-------------------------------------------------------------------*/
+		$total_mae = 0;
+		for ($i = 0; $i < count($rows); $i++) {
+			$mae[$i] = abs($saja[0][$i] - $fore[$i]);
+			$total_mae += $mae[$i];
+		}
+
 		/*-------------------------------------------------------------------standar deviasi----------------------------------------------------------------*/
 		$jumape = 0;
 		$jumkua = 0;
@@ -220,88 +225,105 @@
 			$fore[$i] = round(($level[$j] + $m * $trend[$j]) * $seasonal[$k]);
 		}
 
-		?>
+		$average_mape = array_sum($tampung) / count($tampung) * 100;
+		$average_mae = $total_mae / count($mae);
 
+		// Calculate future periods
+        $lastDate = end($waktu);
+        $date = new DateTime($lastDate);
+        $future_dates = [];
+        for ($i = 0; $i < $periode; $i++) {
+            $date->modify('+1 month');
+            $future_dates[] = $date->format('Y-m');
+        }
+		?>
 
 		<!--row isi-->
 		<div class="col-md-10 p-4" style="background-color: #F2F3F4">
 			<div class="card border-0">
 				<h2 class="text-center">Hasil Prediksi Stok Darah Triple Exponential</h4>
-				<div class="card-body">
+					<div class="card-body">
 
-					<div class="geser">
+						<div class="geser">
+							<table class="table table-hover table-bordered table-sm mt-3">
+								<thead class="thead-light">
+									<tr>
+										<th>No</th>
+										<th>Date</th>
+										<th>Unit</th>
+										<th>Level</th>
+										<th>Trend</th>
+										<th>Seasonal</th>
+										<th>Forecast</th>
+										<th>MAPE</th>
+										<th>MAE</th>
+									</tr>
+								</thead>
+
+								<?php
+								for ($i = 0; $i < count($rows); $i++) {
+								?>
+									<tr>
+										<td><?php echo $nourut++; ?></td>
+										<td><?php echo $waktu[$i]; ?></td>
+										<td><?php echo $saja[0][$i]; ?></td>
+										<td><?php echo round($level[$i], 2); ?></td>
+										<td><?php echo round($trend[$i], 2); ?></td>
+										<td><?php echo round($seasonal[$i], 2); ?></td>
+										<td><?php echo $fore[$i]; ?></td>
+										<td><?php echo $mape[$i]; ?></td>
+										<td><?php echo round($mae[$i], 2); ?></td>
+									</tr>
+								<?php } ?>
+
+							</table>
+						</div>
+						<div class="card border mt-3">
+							<div class="card-body">
+								<p><b>Rata-rata MAPE: </b><span><?php echo round($average_mape, 2) . "%"; ?></span></p>
+								<p><b>Rata-rata MAE: </b><span><?php echo round($average_mae, 2); ?></span></p>
+							</div>
+						</div>
 						<table class="table table-hover table-bordered table-sm mt-3">
 							<thead class="thead-light">
 								<tr>
 									<th>No</th>
 									<th>Date</th>
-									<th>Unit</th>
-									<th>Level</th>
-									<th>Trend</th>
 									<th>Seasonal</th>
 									<th>Forecast</th>
-									<th>MAPE</th>
 								</tr>
 							</thead>
 
 							<?php
-							for ($i = 0; $i < count($rows); $i++) {
-
-							?>
+							for ($i = count($rows); $i < $prediksi; $i++) { ?>
 								<tr>
-									<td><?php echo $nourut++; ?></td>
-									<td><?php echo $waktu[$i]; ?></td>
-									<td><?php echo $saja[0][$i]; ?></td>
-									<td><?php echo round($level[$i], 2); ?></td>
-									<td><?php echo round($trend[$i], 2); ?></td>
-									<td><?php echo round($seasonal[$i], 2); ?></td>
-									<td><?php echo $fore[$i]; ?></td>
-									<td><?php echo $mape[$i]; ?></td>
+									<td><?php echo $nourut++ ?></td>
+									<td><?php echo $future_dates[$i - count($rows)]; ?></td>
+									<td><?php echo $seasonal[$i]; ?></td>
+									<td><?php echo $fore[$i] ?></td>
 								</tr>
 							<?php } ?>
 
 						</table>
-					</div>
-					<table class="table table-hover table-bordered table-sm mt-3">
-						<thead class="thead-light">
-							<tr>
-								<th>No</th>
-								<th>Seasonal</th>
-								<th>Forecast</th>
-							</tr>
-						</thead>
+
+						<div class="card border">
+							<div class="card-body">
+								<?php echo "<b>Hasil Prediksi Triple Exponential Smoothing dari stok darah untuk <span style='color:red'>" . $periode . "</span> bulan kedepan adalah <span style='color:red'>" . $fore[$prediksi - 1] . "</span></b>" ?>
+							</div>
+							<div class="card-footer">
+								<a href="simpan.php" class="btn btn-primary btn-sm" role="button"><i class="fas fa-plus"></i>simpan</a>
+							</div>
+						</div>
 
 						<?php
-						for ($i = count($rows); $i < $prediksi; $i++) { ?>
-							<tr>
-								<td><?php echo $nourut++ ?></td>
-								<td><?php echo $seasonal[$i]; ?></td>
-								<td><?php echo $fore[$i] ?></td>
-							</tr>
-						<?php } ?>
+						$sql = "INSERT into tb_grafik(waktu,aktual,prediksi,mape,avg_mape,level,trend,seasonal,mae,avg_mae,future_forecast)";
+						$sql .= "VALUES ('" . json_encode($waktu) . "','" . json_encode($saja[0]) . "','" . json_encode($fore) . "','" . json_encode($mape) . "','" . json_encode($average_mape) . "','" . json_encode($level) . "','" . json_encode($trend) . "','" . json_encode($seasonal) . "','" . json_encode($mae) . "','" . json_encode($average_mae) . "','" . json_encode(array_slice($fore, count($rows))) . "')";
+						$simpandata = mysqli_query($koneksi, $sql) or exit("error query : <b>" . $sql . "</b>.");
+						?>
 
-					</table>
-
-					<div class="card border">
-						<div class="card-body">
-							<?php echo "<b>Hasil Prediksi Triple Exponential Smoothing dari stok darah untuk <span style='color:red'>" . $periode . "</span> bulan kedepan adalah <span style='color:red'>" . $fore[$prediksi - 1] . "</span></b>" ?>
-						</div>
-						<div class="card-footer">
-							<a href="simpan.php" class="btn btn-primary btn-sm" role="button"><i class="fas fa-plus"></i>simpan</a>
-						</div>
 					</div>
-
-
-					<?php
-					$sql = "INSERT into tb_grafik(waktu,aktual,prediksi,mape)";
-					$sql .= "VALUES ('" . json_encode($waktu) . "','" . json_encode($saja[0]) . "','" . json_encode($fore) . "','" . json_encode($mape) . "')";
-					$simpandata = mysqli_query($koneksi, $sql) or exit("error query : <b>" . $sql . "</b>.");
-					?>
-
-				</div>
 			</div>
 		</div>
-
 
 </body>
 

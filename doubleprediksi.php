@@ -14,7 +14,7 @@
 <body>
     <nav class="navbar navbar-expand-md navbar-dark fixed-top" style="background-color: #42a5f5">
         <a class="navbar-brand" href="index.php">
-            <span class="menu-collapse">Prediksi Penjualan Properti</span>
+            <span class="menu-collapse">Prediksi Stok Darah</span>
         </a>
     </nav>
 
@@ -51,7 +51,7 @@
                             <span class="menu-collapse">Triple Exponential</span>
                         </div>
                     </a>
-                    <a href="prediksi_linier.php" class="bg-dark list-group-item list-group-item-action flex-column align-items-start">
+                    <a href="prediksiregresi.php" class="bg-dark list-group-item list-group-item-action flex-column align-items-start">
                         <div class="d-flex w-100 justify-content-start align-items-center">
                             <span class="menu-collapse">Linear Regression</span>
                         </div>
@@ -67,8 +67,10 @@
         </div>
 
         <div class="col mt-5">
-            <h2 class="text-center">Masukkan Parameter Prediksi</h2>
+            <h2 class="text-center">Prediksi Double Exponential</h2>
             <div class="container mt-3">
+                <label class="mt-5 font-weight-bold">Masukkan Nilai Parameternya</label>
+                <p>Masukkan nilai secara acak dengan ketentuan nilai harus diantara 0 sampai 1</p>
                 <form action="hasildouble.php" method="post">
                     <div class="form-group">
                         <label for="alpha">Alpha (α):</label>
@@ -81,23 +83,23 @@
                     <div class="form-group">
                         <label for="provinsi">Pilih Golongan Darah:</label>
                         <label class="mr-sm-2" for="pilih"></label>
-                        <select class="custom-select" name="kota">
+                        <select class="custom-select" name="golongan">
 
                             <?php
                             include("koneksi.php");
-                            $sql = "SELECT * from tb_provinsi";
+                            $sql = "SELECT * from tb_goldarah";
                             $hasil = mysqli_query($koneksi, $sql) or exit("error query: <b>" . $sql . "</b>.");
                             while ($data = mysqli_fetch_array($hasil)) {
                                 $ket = "";
-                                if (isset($_POST['kota'])) {
-                                    $kota = trim($_POST['kota']);
+                                if (isset($_POST['golongan'])) {
+                                    $golongan = trim($_POST['golongan']);
 
-                                    if ($kota == $data['id_kategori']) {
+                                    if ($golongan == $data['id_kategori']) {
                                         $ket = "selected";
                                     }
                                 }
                             ?>
-                                <option <?php echo $ket; ?> value="<?php echo $data['id_kategori']; ?>"><?php echo $data['kota']; ?></option>
+                                <option <?php echo $ket; ?> value="<?php echo $data['id_kategori']; ?>"><?php echo $data['golongan']; ?></option>
                             <?php } ?>
                         </select>
                     </div>

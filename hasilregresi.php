@@ -2,14 +2,15 @@
 <html>
 
 <head>
-    <title></title>
+    <title>Prediksi Stok Darah</title>
+    <link rel="stylesheet" type="text/css" href="css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="css/style.css">
+    <link rel="stylesheet" href="fontawesome/css/all.css" />
+    <script src="jquery.min.js"></script>
+    <script src="js/bootstrap.bundle.min.js"></script>
+    <script type="text/javascript" src="chart/Chart.js"></script>
+    <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
 </head>
-<link rel="stylesheet" type="text/css" href="css/bootstrap.min.css">
-<script src="jquery.min.js"></script>
-<script src="js/bootstrap.bundle.min.js"></script>
-<link rel="stylesheet" type="text/css" href="css/style.css">
-<link rel="stylesheet" href="fontawesome/css/all.css" />
-<meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
 
 <body>
     <nav class="navbar navbar-expand-md navbar-dark fixed-top" style="background-color: #42a5f5">
@@ -82,9 +83,9 @@
         $rows = array();
         $waktu = array();
 
-        if (isset($_POST['kota'])) {
-            $kota = trim($_POST['kota']);
-            $sql = "SELECT * from tb_data where id_kategori=$kota";
+        if (isset($_POST['golongan'])) {
+            $golongan = trim($_POST['golongan']);
+            $sql = "SELECT * from tb_data where id_kategori=$golongan";
         } else {
             $sql = "SELECT * from tb_data where id_kategori=1";
         }
@@ -114,8 +115,30 @@
         }
 
         $mape = [];
+        $mae = [];
+        $total_mae = 0;
+        $total_mape = 0;
+
         for ($i = 0; $i < count($rows); $i++) {
-            $mape[] = round(abs(($rows[$i] - $fore[$i]) / $rows[$i]) * 100, 1) . "%";
+            $abs_error = abs($rows[$i] - $fore[$i]);
+            $mae[] = $abs_error;
+            $total_mae += $abs_error;
+
+            $mape_value = round(abs(($rows[$i] - $fore[$i]) / $rows[$i]) * 100, 1);
+            $mape[] = $mape_value . "%";
+            $total_mape += $mape_value;
+        }
+
+        $avg_mae = $total_mae / count($mae);
+        $avg_mape = $total_mape / count($mape);
+
+        // Calculate future periods
+        $lastDate = end($waktu);
+        $date = new DateTime($lastDate);
+        $future_dates = [];
+        for ($i = 0; $i < $periode; $i++) {
+            $date->modify('+1 month');
+            $future_dates[] = $date->format('Y-m');
         }
         ?>
 
@@ -132,6 +155,7 @@
                                     <th>Unit</th>
                                     <th>Forecast</th>
                                     <th>MAPE</th>
+                                    <th>MAE</th>
                                 </tr>
                             </thead>
                             <?php
@@ -143,6 +167,7 @@
                                     <td><?php echo $rows[$i]; ?></td>
                                     <td><?php echo $fore[$i]; ?></td>
                                     <td><?php echo $mape[$i]; ?></td>
+                                    <td><?php echo $mae[$i]; ?></td>
                                 </tr>
                             <?php } ?>
                         </table>
@@ -151,6 +176,7 @@
                         <thead class="thead-light">
                             <tr>
                                 <th>No</th>
+                                <th>Forecast Date</th>
                                 <th>Forecast</th>
                             </tr>
                         </thead>
@@ -158,6 +184,7 @@
                         for ($i = count($rows); $i < $prediksi; $i++) { ?>
                             <tr>
                                 <td><?php echo $nourut++ ?></td>
+                                <td><?php echo $future_dates[$i - count($rows)]; ?></td>
                                 <td><?php echo $fore[$i] ?></td>
                             </tr>
                         <?php } ?>
@@ -170,9 +197,15 @@
                             <a href="simpan.php" class="btn btn-primary btn-sm" role="button"><i class="fas fa-plus"></i> simpan</a>
                         </div>
                     </div>
+                    <div class="card border mt-3">
+                        <div class="card-body">
+                            <p><b>Rata-rata MAE:</b> <?php echo round($avg_mae, 2); ?></p>
+                            <p><b>Rata-rata MAPE:</b> <?php echo round($avg_mape, 2); ?>%</p>
+                        </div>
+                    </div>
                     <?php
-                    $sql = "INSERT into tb_grafik(waktu,aktual,prediksi,mape)";
-                    $sql .= "VALUES ('" . json_encode($waktu) . "','" . json_encode($rows) . "','" . json_encode($fore) . "','" . json_encode($mape) . "')";
+                    $sql = "INSERT into tb_grafik(waktu,aktual,prediksi,mape,mae,avg_mae,avg_mape,future_forecast)";
+                    $sql .= "VALUES ('" . json_encode($waktu) . "','" . json_encode($rows) . "','" . json_encode($fore) . "','" . json_encode($mape) . "','" . json_encode($mae) . "','" . $avg_mae . "','" . $avg_mape . "','" . json_encode(array_slice($fore, count($rows))) . "')";
                     $simpandata = mysqli_query($koneksi, $sql) or exit("error query : <b>" . $sql . "</b>.");
                     ?>
                 </div>

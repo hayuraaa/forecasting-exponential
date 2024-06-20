@@ -76,25 +76,25 @@
             <div class="card border-0">
                 <h3 class="card-header bg-transparent">Prediksi Linear Regression</h3>
                 <div class="card-body">
-                    <form action="#.php" method="post">
+                    <form action="hasilregresi.php" method="post">
                         <div class="form-row">
                             <div class="col">
                                 <label class="mr-sm-2" for="pilih">Pilih Golongan Darah</label>
-                                <select class="custom-select" name="kota">
+                                <select class="custom-select" name="golongan">
                                     <?php
                                     include("koneksi.php");
-                                    $sql = "SELECT * from tb_provinsi";
+                                    $sql = "SELECT * from tb_goldarah";
                                     $hasil = mysqli_query($koneksi, $sql) or exit("error query: <b>" . $sql . "</b>.");
                                     while ($data = mysqli_fetch_array($hasil)) {
                                         $ket = "";
-                                        if (isset($_POST['kota'])) {
-                                            $kota = trim($_POST['kota']);
-                                            if ($kota == $data['id_kategori']) {
+                                        if (isset($_POST['golongan'])) {
+                                            $golongan = trim($_POST['golongan']);
+                                            if ($golongan == $data['id_kategori']) {
                                                 $ket = "selected";
                                             }
                                         }
                                     ?>
-                                        <option <?php echo $ket; ?> value="<?php echo $data['id_kategori']; ?>"><?php echo $data['kota']; ?></option>
+                                        <option <?php echo $ket; ?> value="<?php echo $data['id_kategori']; ?>"><?php echo $data['golongan']; ?></option>
                                     <?php } ?>
                                 </select>
                             </div>

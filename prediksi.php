@@ -15,7 +15,7 @@
 <body>
 	<nav class="navbar navbar-expand-md navbar-dark fixed-top" style="background-color: #42a5f5">
 		<a class="navbar-brand" href="index.php">
-			<span class="menu-collapse">Prediksi Penjualan Properti</span>
+			<span class="menu-collapse">Prediksi Stock Darah</span>
 		</a>
 
 	</nav>
@@ -57,7 +57,7 @@
 							<span class="menu-collapse">Triple Exponential</span>
 						</div>
 					</a>
-					<a href="prediksi_linier.php" class="bg-dark list-group-item list-group-item-action flex-column align-items-start">
+					<a href="prediksiregresi.php" class="bg-dark list-group-item list-group-item-action flex-column align-items-start">
 						<div class="d-flex w-100 justify-content-start align-items-center">
 							<span class="menu-collapse">Linear Regression</span>
 						</div>
@@ -92,23 +92,23 @@
 						<div class="form-row">
 							<div class="col">
 								<label class="mr-sm-2" for="pilih">Pilih Golongan Darah</label>
-								<select class="custom-select" name="kota">
+								<select class="custom-select" name="golongan">
 
 									<?php
 									include("koneksi.php");
-									$sql = "SELECT * from tb_provinsi";
+									$sql = "SELECT * from tb_goldarah";
 									$hasil = mysqli_query($koneksi, $sql) or exit("error query: <b>" . $sql . "</b>.");
 									while ($data = mysqli_fetch_array($hasil)) {
 										$ket = "";
-										if (isset($_POST['kota'])) {
-											$kota = trim($_POST['kota']);
+										if (isset($_POST['golongan'])) {
+											$golongan = trim($_POST['golongan']);
 
-											if ($kota == $data['id_kategori']) {
+											if ($golongan == $data['id_kategori']) {
 												$ket = "selected";
 											}
 										}
 									?>
-										<option <?php echo $ket; ?> value="<?php echo $data['id_kategori']; ?>"><?php echo $data['kota']; ?></option>
+										<option <?php echo $ket; ?> value="<?php echo $data['id_kategori']; ?>"><?php echo $data['golongan']; ?></option>
 									<?php } ?>
 								</select>
 							</div>
